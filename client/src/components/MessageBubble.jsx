@@ -27,31 +27,39 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
       {showDate && (
         <div style={{ display: "flex", justifyContent: "center", margin: "12px 0" }}>
           <span style={{
-            background: "var(--wa-bg-secondary)", color: "var(--wa-text-secondary)",
+            background: "var(--wa-bg-secondary)",
+            color: "var(--wa-text-secondary)",
             fontSize: "11px", padding: "4px 12px", borderRadius: "8px",
           }}>{dateLabel}</span>
         </div>
       )}
 
       <div
-        style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", marginBottom: "2px" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: isMine ? "flex-end" : "flex-start",
+          marginBottom: "2px",
+        }}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => { setShowActions(false); setShowReactionPicker(false); }}
       >
-        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "4px" }}>
+        <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: "4px" }}>
+
           {/* Action buttons */}
           {showActions && (
             <div style={{
               display: "flex", gap: "4px",
               order: isMine ? 0 : 1,
+              marginBottom: "4px",
             }}>
               <button
                 onClick={() => setShowReactionPicker(!showReactionPicker)}
                 style={{
-                  width: 28, height: 28, borderRadius: "50%",
+                  width: 26, height: 26, borderRadius: "50%",
                   background: "var(--wa-bg-secondary)",
                   border: "0.5px solid var(--wa-border)",
-                  cursor: "pointer", fontSize: "13px",
+                  cursor: "pointer", fontSize: "12px",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >😊</button>
@@ -61,10 +69,11 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
                   senderUsername: isMine ? authUser.username : "them",
                 })}
                 style={{
-                  width: 28, height: 28, borderRadius: "50%",
+                  width: 26, height: 26, borderRadius: "50%",
                   background: "var(--wa-bg-secondary)",
                   border: "0.5px solid var(--wa-border)",
-                  cursor: "pointer", color: "var(--wa-text-secondary)", fontSize: "13px",
+                  cursor: "pointer", color: "var(--wa-text-secondary)",
+                  fontSize: "12px",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >↩</button>
@@ -72,10 +81,11 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
                 <button
                   onClick={() => deleteMessage(message._id)}
                   style={{
-                    width: 28, height: 28, borderRadius: "50%",
+                    width: 26, height: 26, borderRadius: "50%",
                     background: "var(--wa-bg-secondary)",
                     border: "0.5px solid var(--wa-border)",
-                    cursor: "pointer", color: "#e24b4a", fontSize: "12px",
+                    cursor: "pointer", color: "#e24b4a",
+                    fontSize: "11px",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}
                 >✕</button>
@@ -85,12 +95,16 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
 
           {/* Bubble */}
           <div style={{
-            maxWidth: "65%", order: isMine ? 1 : 0,
+            order: isMine ? 1 : 0,
+            // Key fix: use fit-content so bubble only grows as wide as content needs
+            maxWidth: message.image && !message.text ? "260px" : "min(65%, 420px)",
+            width: "fit-content",
             background: isMine ? "var(--wa-bubble-out)" : "var(--wa-bubble-in)",
             borderRadius: isMine ? "8px 0 8px 8px" : "0 8px 8px 8px",
-            padding: "6px 10px 4px", position: "relative",
+            padding: "6px 10px 4px",
+            position: "relative",
           }}>
-            {/* Tail */}
+            {/* Bubble tail */}
             <div style={{
               position: "absolute", top: 0,
               ...(isMine ? { right: -8 } : { left: -8 }),
@@ -104,15 +118,18 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
             {/* Reply preview */}
             {message.replyTo?.messageId && (
               <div style={{
-                background: "rgba(0,0,0,0.2)", borderLeft: "3px solid #00a884",
-                borderRadius: "4px", padding: "6px 8px", marginBottom: "6px",
+                background: "rgba(0,0,0,0.2)",
+                borderLeft: "3px solid #00a884",
+                borderRadius: "4px", padding: "5px 8px",
+                marginBottom: "5px",
               }}>
                 <div style={{ fontSize: "11px", color: "#00a884", fontWeight: "600", marginBottom: "2px" }}>
                   {message.replyTo.senderUsername}
                 </div>
                 <div style={{
                   fontSize: "12px", color: "var(--wa-text-secondary)",
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px",
+                  whiteSpace: "nowrap", overflow: "hidden",
+                  textOverflow: "ellipsis", maxWidth: "200px",
                 }}>
                   {message.replyTo.text}
                 </div>
@@ -125,43 +142,69 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
                 src={message.image} alt="attachment"
                 onClick={() => setLightboxSrc(message.image)}
                 style={{
-                  maxWidth: "100%", borderRadius: "6px", display: "block",
-                  marginBottom: message.text ? "6px" : "2px",
-                  cursor: "pointer", maxHeight: "260px", objectFit: "cover",
+                  maxWidth: "240px", width: "100%",
+                  borderRadius: "6px", display: "block",
+                  marginBottom: message.text ? "5px" : "0",
+                  cursor: "pointer", maxHeight: "240px", objectFit: "cover",
                 }}
               />
             )}
 
-            {/* Text */}
+            {/* Text + time in same line when text is short */}
             {message.text && (
-              <span style={{
-                fontSize: "14px", color: "var(--wa-text-primary)",
-                lineHeight: "1.4", wordBreak: "break-word",
-              }}>
-                {message.text}
-              </span>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: "6px" }}>
+                <span style={{
+                  fontSize: "14px", color: "var(--wa-text-primary)",
+                  lineHeight: "1.4", wordBreak: "break-word",
+                  flex: 1,
+                }}>
+                  {message.text}
+                </span>
+                {/* Inline time for text messages */}
+                <span style={{
+                  fontSize: "11px", color: "var(--wa-text-muted)",
+                  whiteSpace: "nowrap", flexShrink: 0,
+                  alignSelf: "flex-end", marginBottom: "1px",
+                }}>
+                  {formatTime(message.createdAt)}
+                  {isMine && (
+                    <span style={{
+                      marginLeft: "3px",
+                      color: message.seen ? "#53bdeb" : "var(--wa-text-muted)",
+                    }}>
+                      {message.seen ? "✓✓" : "✓"}
+                    </span>
+                  )}
+                </span>
+              </div>
             )}
 
-            {/* Meta */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: "3px",
-              justifyContent: "flex-end", marginTop: "2px",
-            }}>
-              <span style={{ fontSize: "11px", color: "var(--wa-text-muted)" }}>
-                {formatTime(message.createdAt)}
-              </span>
-              {isMine && (
-                <span style={{ fontSize: "12px", color: message.seen ? "#53bdeb" : "var(--wa-text-muted)" }}>
-                  {message.seen ? "✓✓" : "✓"}
+            {/* Time below image (when no text) */}
+            {!message.text && message.image && (
+              <div style={{
+                display: "flex", justifyContent: "flex-end",
+                alignItems: "center", gap: "3px", marginTop: "3px",
+              }}>
+                <span style={{ fontSize: "11px", color: "var(--wa-text-muted)" }}>
+                  {formatTime(message.createdAt)}
                 </span>
-              )}
-            </div>
+                {isMine && (
+                  <span style={{
+                    fontSize: "12px",
+                    color: message.seen ? "#53bdeb" : "var(--wa-text-muted)",
+                  }}>
+                    {message.seen ? "✓✓" : "✓"}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Reaction picker */}
+          {/* Reaction picker popup */}
           {showReactionPicker && (
             <div style={{
-              position: "absolute", bottom: "calc(100% + 4px)",
+              position: "absolute",
+              bottom: "calc(100% + 4px)",
               ...(isMine ? { right: 0 } : { left: 0 }),
               background: "var(--wa-bg-secondary)",
               border: "0.5px solid var(--wa-border)",
@@ -187,10 +230,7 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
 
         {/* Reactions display */}
         {groupedReactions && Object.keys(groupedReactions).length > 0 && (
-          <div style={{
-            display: "flex", flexWrap: "wrap", gap: "4px",
-            marginTop: "3px",
-          }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "3px" }}>
             {Object.entries(groupedReactions).map(([emoji, count]) => (
               <button
                 key={emoji}
@@ -198,8 +238,8 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
                 style={{
                   background: "var(--wa-bg-secondary)",
                   border: "0.5px solid var(--wa-border)",
-                  borderRadius: "12px", padding: "2px 6px",
-                  cursor: "pointer", fontSize: "12px",
+                  borderRadius: "12px", padding: "2px 7px",
+                  cursor: "pointer", fontSize: "13px",
                   display: "flex", alignItems: "center", gap: "3px",
                   color: "var(--wa-text-primary)",
                 }}
