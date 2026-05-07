@@ -10,9 +10,26 @@ export const createGroup = async (req, res) => {
 
     if (!name) return res.status(400).json({ message: "Group name is required" });
 
+    // Prevent duplicate group creation within 5 seconds
+    const recentDuplicate = await Group.findOne({
+      admin: adminId,
+      name: name.trim(),
+      createdAt: { $gte: new Date(Date.now() - 5000) },
+    });
+
+    if (recentDuplicate) {
+      return res.status(400).json({ message: "Group already being created" });
+    }
+
     const members = [...new Set([adminId.toString(), ...(memberIds || [])])];
 
-    const group = new Group({ name, description, admin: adminId, members });
+    const group = new Group({
+      name: name.trim(),
+      description: description || "",
+      admin: adminId,
+      members,
+    });
+
     await group.save();
     await group.populate("members", "-password");
     await group.populate("admin", "-password");

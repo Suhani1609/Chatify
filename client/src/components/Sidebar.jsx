@@ -277,26 +277,39 @@ const Sidebar = () => {
           ) : (
             // Groups tab
             filteredGroups.length === 0 ? (
-              <div style={{ padding: "32px 16px", textAlign: "center", color: "var(--wa-text-muted)", fontSize: "13px" }}>
-                <div style={{ fontSize: "40px", marginBottom: "12px" }}>👥</div>
-                No groups yet
-                <br />
+              <div style={{
+                padding: "40px 20px", textAlign: "center",
+                color: "var(--wa-text-muted)", fontSize: "13px",
+              }}>
+                <div style={{ fontSize: "48px", marginBottom: "12px", opacity: 0.5 }}>👥</div>
+                <p style={{ marginBottom: "4px", color: "var(--wa-text-secondary)", fontWeight: "500" }}>
+                  No groups yet
+                </p>
+                <p style={{ fontSize: "12px", marginBottom: "16px" }}>
+                  Create a group to chat with multiple people at once
+                </p>
                 <button
                   onClick={() => setShowCreateGroup(true)}
                   style={{
-                    marginTop: "12px", background: "none",
-                    border: "0.5px solid #00a884", borderRadius: "20px",
-                    padding: "8px 16px", color: "#00a884",
-                    fontSize: "13px", cursor: "pointer",
+                    background: "none",
+                    border: "1.5px solid #00a884",
+                    borderRadius: "20px", padding: "8px 20px",
+                    color: "#00a884", fontSize: "13px",
+                    fontWeight: "500", cursor: "pointer",
                   }}
                 >
-                  Create your first group
+                  + Create group
                 </button>
               </div>
             ) : (
               filteredGroups.map((group) => {
                 const isSelected = selectedGroup?._id === group._id;
                 const color = COLORS[group.name.charCodeAt(0) % COLORS.length];
+                const memberNames = group.members
+                  .slice(0, 3)
+                  .map((m) => m.username || "")
+                  .join(", ");
+
                 return (
                   <div
                     key={group._id}
@@ -308,31 +321,65 @@ const Sidebar = () => {
                       borderBottom: "0.5px solid var(--wa-border)",
                       transition: "background .1s",
                     }}
-                    onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "var(--wa-bg-secondary)"; }}
-                    onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) e.currentTarget.style.background = "var(--wa-bg-secondary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) e.currentTarget.style.background = "transparent";
+                    }}
                   >
-                    <div style={{
-                      width: 48, height: 48, borderRadius: "50%",
-                      background: color, flexShrink: 0,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontWeight: "600", fontSize: 18, color: "#fff", overflow: "hidden",
-                    }}>
-                      {group.avatar
-                        ? <img src={group.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        : group.name[0].toUpperCase()
-                      }
+                    {/* Group avatar — stacked initials style */}
+                    <div style={{ position: "relative", width: 48, height: 48, flexShrink: 0 }}>
+                      <div style={{
+                        width: 48, height: 48, borderRadius: "50%",
+                        background: color,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontWeight: "700", fontSize: 20, color: "#fff", overflow: "hidden",
+                      }}>
+                        {group.avatar
+                          ? <img src={group.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : group.name[0].toUpperCase()
+                        }
+                      </div>
+                      {/* Admin crown badge */}
+                      <div style={{
+                        position: "absolute", bottom: -1, right: -1,
+                        background: "var(--wa-bg-primary)", borderRadius: "50%",
+                        width: 16, height: 16,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "9px",
+                      }}>
+                        👥
+                      </div>
                     </div>
+
+                    {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        fontSize: "15px", fontWeight: "500",
-                        color: "var(--wa-text-primary)",
-                        whiteSpace: "nowrap", overflow: "hidden",
-                        textOverflow: "ellipsis", marginBottom: "3px",
+                        display: "flex", justifyContent: "space-between",
+                        alignItems: "center", marginBottom: "3px",
                       }}>
-                        {group.name}
+                        <span style={{
+                          fontSize: "15px", fontWeight: "500",
+                          color: "var(--wa-text-primary)",
+                          whiteSpace: "nowrap", overflow: "hidden",
+                          textOverflow: "ellipsis", flex: 1,
+                        }}>
+                          {group.name}
+                        </span>
+                        <span style={{
+                          fontSize: "11px", color: "var(--wa-text-muted)",
+                          flexShrink: 0, marginLeft: "6px",
+                        }}>
+                          {group.members.length} 👤
+                        </span>
                       </div>
-                      <span style={{ fontSize: "13px", color: "var(--wa-text-muted)" }}>
-                        {group.members.length} members
+                      <span style={{
+                        fontSize: "12px", color: "var(--wa-text-muted)",
+                        whiteSpace: "nowrap", overflow: "hidden",
+                        textOverflow: "ellipsis", display: "block",
+                      }}>
+                        {group.description || memberNames}
                       </span>
                     </div>
                   </div>
