@@ -3,27 +3,18 @@ import { useAuthStore } from "../store/useAuthStore.js";
 import { useChatStore } from "../store/useChatStore.js";
 import ImageLightbox from "./ImageLightbox.jsx";
 
-const QUICK_REACTIONS = ["❤️", "😂", "😮", "😢", "👍", "🙏"];
-
 const MessageBubble = ({ message, showDate, dateLabel }) => {
   const { authUser } = useAuthStore();
-  const { deleteMessage, setReplyingTo, reactToMessage } = useChatStore();
-  const [showActions, setShowActions] = useState(false);
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const { deleteMessage, setReplyingTo } = useChatStore();
+  const [hovered, setHovered] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState(null);
 
   const isMine = message.senderId === authUser._id;
 
   const formatTime = (date) =>
     new Date(date).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
+      hour: "2-digit", minute: "2-digit",
     });
-
-  const groupedReactions = message.reactions?.reduce((acc, r) => {
-    acc[r.emoji] = (acc[r.emoji] || 0) + 1;
-    return acc;
-  }, {});
 
   return (
     <>
@@ -42,89 +33,52 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
         </div>
       )}
 
-      {/* Outer row */}
-      <div style={{
-        display: "flex",
-        justifyContent: isMine ? "flex-end" : "flex-start",
-        alignItems: "flex-end",
-        gap: "4px",
-        marginBottom: "3px",
-        position: "relative",
-      }}>
-
-        {/* ── Action buttons (shown on hover, OUTSIDE the bubble) ── */}
-        {showActions && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              gap: "4px",
-              alignItems: "center",
-              order: isMine ? 0 : 1,
-              flexShrink: 0,
-            }}
-          >
+      {/* ── Single hover zone wrapping bubble + buttons together ── */}
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          display: "flex",
+          justifyContent: isMine ? "flex-end" : "flex-start",
+          alignItems: "center",
+          gap: "6px",
+          marginBottom: "3px",
+          paddingLeft: "4px",
+          paddingRight: "4px",
+        }}
+      >
+        {/* Action buttons LEFT side (received messages) */}
+        {!isMine && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            opacity: hovered ? 1 : 0,
+            pointerEvents: hovered ? "auto" : "none",
+            transition: "opacity 0.15s",
+            flexShrink: 0,
+          }}>
             <button
-              onClick={() => setShowReactionPicker(!showReactionPicker)}
-              title="React"
-              style={{
-                width: 26, height: 26, borderRadius: "50%",
-                background: "var(--wa-bg-tertiary)",
-                border: "0.5px solid var(--wa-border)",
-                cursor: "pointer", fontSize: "13px",
-                display: "flex", alignItems: "center",
-                justifyContent: "center", flexShrink: 0,
+              onClick={() => {
+                setReplyingTo({
+                  ...message,
+                  senderUsername: "them",
+                });
+                setHovered(false);
               }}
-            >😊</button>
-
-            <button
-              onClick={() => setReplyingTo({
-                ...message,
-                senderUsername: isMine ? authUser.username : "them",
-              })}
               title="Reply"
-              style={{
-                width: 26, height: 26, borderRadius: "50%",
-                background: "var(--wa-bg-tertiary)",
-                border: "0.5px solid var(--wa-border)",
-                cursor: "pointer",
-                color: "var(--wa-text-secondary)",
-                fontSize: "13px",
-                display: "flex", alignItems: "center",
-                justifyContent: "center", flexShrink: 0,
-              }}
+              style={btnStyle}
             >↩</button>
-
-            {isMine && (
-              <button
-                onClick={() => deleteMessage(message._id)}
-                title="Delete"
-                style={{
-                  width: 26, height: 26, borderRadius: "50%",
-                  background: "var(--wa-bg-tertiary)",
-                  border: "0.5px solid var(--wa-border)",
-                  cursor: "pointer", color: "#e24b4a",
-                  fontSize: "12px",
-                  display: "flex", alignItems: "center",
-                  justifyContent: "center", flexShrink: 0,
-                }}
-              >✕</button>
-            )}
           </div>
         )}
 
-        {/* ── Bubble wrapper — handles hover WITHOUT blur ── */}
-        <div
-          style={{ order: isMine ? 1 : 0, position: "relative" }}
-          onMouseEnter={() => setShowActions(true)}
-          onMouseLeave={() => {
-            setShowActions(false);
-            setShowReactionPicker(false);
-          }}
-        >
+        {/* ── Bubble ── */}
+        <div style={{
+          position: "relative",
+          maxWidth: "min(320px, 58vw)",
+          flexShrink: 0,
+        }}>
           <div style={{
-            display: "inline-block",        /* shrink to content width */
-            maxWidth: "min(320px, 60vw)",   /* never wider than 320px */
             background: isMine ? "var(--wa-bubble-out)" : "var(--wa-bubble-in)",
             borderRadius: isMine ? "8px 0 8px 8px" : "0 8px 8px 8px",
             padding: "6px 10px 5px",
@@ -132,7 +86,6 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
             wordBreak: "break-word",
             overflowWrap: "anywhere",
           }}>
-
             {/* Tail */}
             <div style={{
               position: "absolute", top: 0,
@@ -185,35 +138,34 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
               />
             )}
 
-            {/* Text line — uses flex so time sits inline at the end */}
+            {/* Text */}
             {message.text && (
               <span style={{
                 fontSize: "14px",
                 color: "var(--wa-text-primary)",
                 lineHeight: "1.45",
-                whiteSpace: "pre-wrap",   /* respect newlines, wrap normally */
+                whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
                 overflowWrap: "anywhere",
+                display: "block",
               }}>
                 {message.text}
-                {/* Invisible spacer so the time never overlaps the last word */}
                 <span style={{
                   display: "inline-block",
-                  width: isMine ? "72px" : "44px", /* space for time + ticks */
+                  width: isMine ? "76px" : "46px",
                   height: "1px",
                 }} />
               </span>
             )}
 
-            {/* Time + ticks — float bottom-right inside bubble */}
+            {/* Time + ticks */}
             <div style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "flex-end",
               gap: "3px",
-              marginTop: "-14px",   /* pull up next to last text line */
+              marginTop: message.text ? "-14px" : "3px",
               marginBottom: "1px",
-              paddingLeft: "8px",
             }}>
               <span style={{
                 fontSize: "11px",
@@ -232,98 +184,47 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
                 </span>
               )}
             </div>
-
-            {/* Time below image (image-only messages) */}
-            {!message.text && message.image && (
-              <div style={{
-                display: "flex", alignItems: "center",
-                justifyContent: "flex-end", gap: "3px",
-                marginTop: "-14px",
-              }}>
-                <span style={{ fontSize: "11px", color: "var(--wa-text-muted)" }}>
-                  {formatTime(message.createdAt)}
-                </span>
-                {isMine && (
-                  <span style={{
-                    fontSize: "13px",
-                    color: message.seen ? "#53bdeb" : "var(--wa-text-muted)",
-                  }}>
-                    {message.seen ? "✓✓" : "✓"}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
-
-          {/* Reaction picker popup */}
-          {showReactionPicker && (
-            <div style={{
-              position: "absolute",
-              bottom: "calc(100% + 6px)",
-              ...(isMine ? { right: 0 } : { left: 0 }),
-              background: "var(--wa-bg-secondary)",
-              border: "0.5px solid var(--wa-border)",
-              borderRadius: "24px", padding: "6px 10px",
-              display: "flex", gap: "6px", zIndex: 200,
-              boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
-            }}>
-              {QUICK_REACTIONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => {
-                    reactToMessage(message._id, emoji);
-                    setShowReactionPicker(false);
-                  }}
-                  style={{
-                    background: "none", border: "none",
-                    cursor: "pointer", fontSize: "20px",
-                    borderRadius: "50%", padding: "2px",
-                    transition: "transform .1s",
-                    lineHeight: 1,
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.3)"}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
+
+        {/* Action buttons RIGHT side (my messages) */}
+        {isMine && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            opacity: hovered ? 1 : 0,
+            pointerEvents: hovered ? "auto" : "none",
+            transition: "opacity 0.15s",
+            flexShrink: 0,
+          }}>
+            {/* Reply */}
+            <button
+              onClick={() => {
+                setReplyingTo({
+                  ...message,
+                  senderUsername: authUser.username,
+                });
+                setHovered(false);
+              }}
+              title="Reply"
+              style={btnStyle}
+            >↩</button>
+
+            {/* Delete */}
+            <button
+              onClick={() => {
+                deleteMessage(message._id);
+                setHovered(false);
+              }}
+              title="Delete"
+              style={{ ...btnStyle, color: "#e24b4a" }}
+            >✕</button>
+          </div>
+        )}
       </div>
 
-      {/* Reactions row */}
-      {groupedReactions && Object.keys(groupedReactions).length > 0 && (
-        <div style={{
-          display: "flex",
-          justifyContent: isMine ? "flex-end" : "flex-start",
-          flexWrap: "wrap", gap: "4px",
-          marginBottom: "4px",
-          paddingRight: isMine ? "8px" : "0",
-          paddingLeft: isMine ? "0" : "8px",
-        }}>
-          {Object.entries(groupedReactions).map(([emoji, count]) => (
-            <button
-              key={emoji}
-              onClick={() => reactToMessage(message._id, emoji)}
-              style={{
-                background: "var(--wa-bg-secondary)",
-                border: "0.5px solid var(--wa-border)",
-                borderRadius: "12px", padding: "2px 7px",
-                cursor: "pointer", fontSize: "13px",
-                display: "flex", alignItems: "center", gap: "3px",
-                color: "var(--wa-text-primary)",
-              }}
-            >
-              <span>{emoji}</span>
-              {count > 1 && (
-                <span style={{ fontSize: "11px" }}>{count}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
+      {/* Lightbox */}
       {lightboxSrc && (
         <ImageLightbox
           src={lightboxSrc}
@@ -332,6 +233,22 @@ const MessageBubble = ({ message, showDate, dateLabel }) => {
       )}
     </>
   );
+};
+
+const btnStyle = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "50%",
+  background: "#202c33",
+  border: "0.5px solid #3d4e58",
+  cursor: "pointer",
+  fontSize: "15px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#aebac1",
+  flexShrink: 0,
+  boxShadow: "0 1px 6px rgba(0,0,0,0.35)",
 };
 
 export default MessageBubble;
