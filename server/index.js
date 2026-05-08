@@ -14,13 +14,18 @@ import { app, server } from "./socket/socket.js";
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
+
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:5173",
   credentials: true,
 }));
 
 app.get("/", (req, res) => {
-  res.json({ message: "Chatify API is running" });
+  res.json({ status: "ok", message: "Chatify API is running" });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", uptime: process.uptime() });
 });
 
 app.use("/api/auth", authRoutes);
@@ -37,6 +42,6 @@ const PORT = process.env.PORT || 5001;
 
 connectDB().then(() => {
   server.listen(PORT, () => {
-    console.log(`Chatify server running on http://localhost:${PORT}`);
+    console.log(`Chatify server running on port ${PORT}`);
   });
 });

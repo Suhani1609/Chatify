@@ -11,6 +11,7 @@ const io = new Server(server, {
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
   },
+  transports: ["websocket", "polling"],
 });
 
 const userSocketMap = {};
@@ -20,30 +21,23 @@ export const getReceiverSocketId = (receiverId) => {
 };
 
 io.on("connection", (socket) => {
-  console.log(`🔌 Socket connected: ${socket.id}`);
-
   const userId = socket.handshake.query.userId;
 
   if (userId && userId !== "undefined") {
     userSocketMap[userId] = socket.id;
-
     User.findByIdAndUpdate(userId, { isOnline: true }).catch(() => {});
   }
 
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
   socket.on("typing", ({ receiverId }) => {
-    const receiverSocketId = getReceiverSocketId(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("typing", { senderId: userId });
-    }
+    const socketId = getReceiverSocketId(receiverId);
+    if (socketId) io.to(socketId).emit("typing", { senderId: userId });
   });
 
   socket.on("stopTyping", ({ receiverId }) => {
-    const receiverSocketId = getReceiverSocketId(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("stopTyping", { senderId: userId });
-    }
+    const socketId = getReceiverSocketId(receiverId);
+    if (socketId) io.to(socketId).emit("stopTyping", { senderId: userId });
   });
 
   socket.on("joinGroup", (groupId) => {
@@ -55,7 +49,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", async () => {
-    console.log(`❌ Socket disconnected: ${socket.id}`);
     if (userId && userId !== "undefined") {
       delete userSocketMap[userId];
       try {
@@ -64,7 +57,7 @@ io.on("connection", (socket) => {
           lastSeen: new Date(),
         });
       } catch (err) {
-        console.error("lastSeen update error:", err.message);
+        console.error("lastSeen update:", err.message);
       }
     }
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
