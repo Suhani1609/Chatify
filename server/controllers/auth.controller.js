@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import User from "../models/User.model.js";
 import cloudinary from "../lib/cloudinary.js";
-import { sendWelcomeEmail, resend } from "../lib/resend.js";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "../lib/resend.js";
 
 const generateTokenAndSetCookie = (userId, res) => {
   const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
